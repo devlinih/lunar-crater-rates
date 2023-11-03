@@ -4,6 +4,7 @@ Find craters that lie within other craters.
 import numpy as np
 import pandas as pd
 import time
+import json
 
 from collections import defaultdict
 
@@ -134,6 +135,10 @@ def main():
 
     with open("robbins_in_yang.csv", "w") as file:
         file.write(robbins_in_yang.to_csv(index=False))
+    
+    robbins_in_yang_no_set = {k: list(v) for k,v in robbins_in_yang.items()}
+    with open("robbins_in_yang.json") as file:
+        file.write(json.dumps(robbins_in_yang_no_set))
 
 
 if __name__ == "__main__":
