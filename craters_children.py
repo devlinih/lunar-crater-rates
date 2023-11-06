@@ -105,10 +105,12 @@ def ncraters_in_ncraters(c_df, p_df, progress=False):
     return overlaps
 
 
-results = {}
+def build_processed_craters():
+    """
+    Load and process Yang and Robbins datasets.
 
-
-def main():
+    Returns: Two dataframes, each with "id", "lon", "lat", and "diam" fields.
+    """
     robbins_craters = pd.read_csv("./lunar_crater_database_robbins_2018.csv")
     robbins_lt_10 = robbins_craters["DIAM_CIRC_IMG"] < 10
     robbins_craters = robbins_craters[robbins_lt_10]
@@ -126,8 +128,50 @@ def main():
     parent_craters["diam"] = yang_aged_craters["Diam_km"]
     parent_craters["age"] = yang_aged_craters["Age"]
 
-    # Save it as a global just in case I mess up...
-    global results
+    return parent_craters, child_craters
+
+
+def correct_craters_in_craters():
+    """
+    Correct a craters in craters dict.
+
+    Written to correct the incorrect data that used a diameter in place of a
+    radius.
+    """
+    parent_craters, child_craters = build_processed_craters()
+
+    with open("./robbins_in_yang.json", "r") as file:
+        data = json.loads(file.read())
+
+    def list_to_dataframe(p_id, c_list):
+        crater_rows = child_craters["id"].map(lambda x: x in c_list)
+        return child_craters[crater_rows]
+
+    def craters_in_parent(parent_id, c_list):
+        child_df = list_to_dataframe(parent_id, c_list)
+
+        parent_row = parent_craters[parent_craters["id"] == int(parent_id)]
+        parent_radius = float(parent_row["diam"] / 2)
+        parent_lon = float(parent_row["lon"])
+        parent_lat = float(parent_row["lat"])
+        # Check that the distance between center of the parent and center of
+        # each child is actually within the radius of the parent
+        correct_rows = child_df.apply(
+            lambda x: great_cirlce_distance(x["lon"], x["lat"], parent_lon, parent_lat)
+            <= parent_radius,
+            axis=1,
+        )
+        return list(child_df["id"][correct_rows])
+
+    new_data = {p_id: craters_in_parent(p_id, c_list) for p_id, c_list in data.items()}
+    new_data = {p_id: c_list for p_id, c_list in new_data.items() if len(c_list) > 0}
+    with open("./new_data.json", "w") as f_out:
+        f_out.write(json.dumps(new_data, indent=4))
+
+
+def main():
+    parent_craters, child_craters = build_processed_craters()
+
     results = ncraters_in_ncraters(child_craters, parent_craters, progress=True)
 
     robbins_in_yang = pd.DataFrame()
@@ -140,7 +184,7 @@ def main():
 
     robbins_in_yang_no_set = {k: list(v) for k, v in robbins_in_yang.items()}
     with open("robbins_in_yang.json") as file:
-        file.write(json.dumps(robbins_in_yang_no_set))
+        file.write(json.dumps(robbins_in_yang_no_set, indent=4))
 
 
 if __name__ == "__main__":
