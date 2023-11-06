@@ -55,7 +55,7 @@ def crater_in_crater(c_lon, c_lat, p_lon, p_lat, p_diam):
     Check if child crater c lies within parent crater p.
     """
     dist = great_cirlce_distance(c_lon, c_lat, p_lon, p_lat)
-    return dist < p_diam
+    return dist < p_diam / 2  # Use radius not diameter...
 
 
 def crater_in_ncraters(c_lon, c_lat, p_df):
@@ -97,7 +97,9 @@ def ncraters_in_ncraters(c_df, p_df, progress=False):
             t_elapsed = time.perf_counter() - t_start
             rate = t_elapsed / percent
             t_est = (100 - percent) * rate
-            print(f"{c_ind}/{len(c_df)}, {percent:.1f}, elapsed: {t_elapsed:.0f}, eta: {t_est:.0f}")
+            print(
+                f"{c_ind}/{len(c_df)}, {percent:.1f}, elapsed: {t_elapsed:.0f}, eta: {t_est:.0f}"
+            )
         c_ind += 1
 
     return overlaps
@@ -135,8 +137,8 @@ def main():
 
     with open("robbins_in_yang.csv", "w") as file:
         file.write(robbins_in_yang.to_csv(index=False))
-    
-    robbins_in_yang_no_set = {k: list(v) for k,v in robbins_in_yang.items()}
+
+    robbins_in_yang_no_set = {k: list(v) for k, v in robbins_in_yang.items()}
     with open("robbins_in_yang.json") as file:
         file.write(json.dumps(robbins_in_yang_no_set))
 
