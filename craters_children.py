@@ -120,7 +120,7 @@ def build_processed_craters():
     child_craters["lat"] = robbins_craters["LAT_CIRC_IMG"]
     child_craters["diam"] = robbins_craters["DIAM_CIRC_IMG"]
 
-    yang_aged_craters = pd.read_csv("./Aged_Lunar_Crater_Database_DeepCraters_2020.csv")
+    yang_aged_craters = pd.read_csv("./yang_aged_database.csv")
     parent_craters = pd.DataFrame()
     parent_craters["id"] = yang_aged_craters["ID"]
     parent_craters["lon"] = yang_aged_craters["Lon"]
